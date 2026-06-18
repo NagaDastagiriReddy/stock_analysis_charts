@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Stocks Dashboard</title>
+    <!-- Modern Typography: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>Indian Stocks Dashboard</h1>
+            <p>Live tracking of premium equities</p>
+            <div class="search-container">
+                <input type="text" id="stock-input" placeholder="e.g., TCS, INFY, TATAMOTORS_CV" autocomplete="off" spellcheck="false" value="TATAMOTORS_CV, TATAMOTORS_PV, TCS, INFY, HCLTECH">
+                <button id="fetch-btn">Load Charts</button>
+            </div>
+        </header>
+
+        <div id="loader" class="loader hidden"></div>
+
+        <main class="grid-container" id="chart-grid">
+            <!-- Stock Cards will be dynamically injected here by app.js -->
+        </main>
+    </div>
+
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Data and Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
