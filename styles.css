@@ -83,25 +83,25 @@ header p {
 }
 
 .card-title {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 0.2rem;
 }
 
 .card-symbol {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 400;
     letter-spacing: 0.5px;
 }
 
 .card-price {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: 600;
 }
 
 .card-change {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     margin-top: 0.3rem;
     display: flex;
@@ -160,6 +160,45 @@ header p {
 }
 
 /* Search Form */
+.controls-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.sort-buttons-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.sort-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sort-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.sort-btn.active {
+    background: var(--primary-glow);
+    color: #fff;
+    border-color: transparent;
+}
+
 .search-container {
     margin-top: 1rem;
     display: flex;
@@ -204,6 +243,26 @@ header p {
 #fetch-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(213, 0, 249, 0.4);
+}
+
+.upload-btn {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    padding: 0 1.5rem;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.upload-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-2px);
 }
 
 #fetch-btn:active {

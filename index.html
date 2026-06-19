@@ -13,9 +13,20 @@
         <header>
             <h1>Indian Stocks Dashboard</h1>
             <p>Live tracking of premium equities</p>
-            <div class="search-container">
-                <input type="text" id="stock-input" placeholder="e.g., TCS.NS, INFY.NS, RELIANCE.NS" autocomplete="off" spellcheck="false" value="TCS.NS, RELIANCE.NS, INFY.NS, HDFCBANK.NS, HCLTECH.NS">
-                <button id="fetch-btn">Load Charts</button>
+            <div class="controls-row">
+                <div class="search-container">
+                    <input type="text" id="stock-input" placeholder="e.g., TCS.NS, INFY.NS, RELIANCE.NS" autocomplete="off" spellcheck="false" value="TCS.NS, RELIANCE.NS, INFY.NS, HDFCBANK.NS, HCLTECH.NS">
+                    <button id="fetch-btn">Load Charts</button>
+                    <input type="file" id="file-upload" accept=".txt,.csv" style="display: none;">
+                    <label for="file-upload" class="upload-btn">Upload List</label>
+                </div>
+                <div class="sort-buttons-container">
+                    <button class="sort-btn active" data-sort="default">Default</button>
+                    <button class="sort-btn" data-sort="change_desc">% Change ↓</button>
+                    <button class="sort-btn" data-sort="change_asc">% Change ↑</button>
+                    <button class="sort-btn" data-sort="pe_asc">P/E Ratio ↓</button>
+                    <button class="sort-btn" data-sort="pe_desc">P/E Ratio ↑</button>
+                </div>
             </div>
         </header>
 

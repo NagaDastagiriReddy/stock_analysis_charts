@@ -1,70 +1,28 @@
-// Removed data.js dependency, everything is dynamic now.
-
-// Utility: Generate realistic random walk data based on symbol string hash
-function generateMockData(symbol) {
-    let hash = 0;
-    for (let i = 0; i < symbol.length; i++) {
-        hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    const basePrice = Math.abs(hash % 4000) + 100;
-    const colors = ["#00E676", "#2979FF", "#FF1744", "#FFEA00", "#D500F9", "#00E5FF", "#FF9100"];
-    const colorIndex = Math.abs(hash) % colors.length;
-    const color = colors[colorIndex];
-
-    const data = [basePrice];
-    let currentPrice = basePrice;
-    
-    for (let i = 1; i < 365; i++) {
-        // Slightly lower volatility since we have 365 days
-        const changePercent = (Math.random() - 0.5) * 0.03; // +/- 1.5%
-        currentPrice = currentPrice * (1 + changePercent);
-        data.push(parseFloat(currentPrice.toFixed(2)));
-    }
-
-    const high52 = Math.max(...data).toFixed(2);
-    const low52 = Math.min(...data).toFixed(2);
-    const peRatio = (Math.abs(hash % 40) + 15 + Math.random()).toFixed(1);
-
-    return {
-        symbol: symbol.toUpperCase(),
-        name: symbol.toUpperCase(),
-        color: color,
-        data: data,
-        high52: high52,
-        low52: low52,
-        peRatio: peRatio
-    };
-}
-
-// Simulated API Call
+// Real API Call to Local Python Backend (Unlimited Free Data)
 async function fetchStockDetails(symbol) {
-    return new Promise((resolve) => {
-        // Simulate network latency
-        const delay = Math.random() * 400 + 400;
-        setTimeout(() => {
-            resolve(generateMockData(symbol.trim()));
-        }, delay);
-    });
-}
+    try {
+        let querySymbol = symbol.trim().toUpperCase();
 
-function calculateChange(data) {
-    const start = data[0];
-    const end = data[data.length - 1];
-    const change = ((end - start) / start) * 100;
-    return change.toFixed(2);
-}
+        const url = `http://localhost:5000/api/stock?symbol=${querySymbol}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
 
-// Generate 365 days of dates ending today
-const labels = [];
-const today = new Date();
-for (let i = 364; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    } catch (e) {
+        console.error("Fetch failed for " + symbol + ":", e.message);
+        throw e;
+    }
 }
 
 let activeCharts = [];
+let currentStocksData = [];
+let currentSortMode = 'default';
 
 async function loadDashboard() {
     const inputStr = document.getElementById('stock-input').value;
@@ -81,18 +39,55 @@ async function loadDashboard() {
     loader.classList.remove('hidden');
 
     try {
-        // Fetch concurrently
         const fetchPromises = symbols.map(sym => fetchStockDetails(sym));
-        const stocksData = await Promise.all(fetchPromises);
+        const results = await Promise.allSettled(fetchPromises);
+        
+        const stocksData = results
+            .filter(r => r.status === 'fulfilled' && !r.value.error)
+            .map(r => r.value);
 
         // UI State: Render
         loader.classList.add('hidden');
-        renderCards(stocksData, grid);
+        if (stocksData.length > 0) {
+            currentStocksData = stocksData;
+            applySorting();
+        } else {
+            grid.innerHTML = '<p style="text-align:center; color: var(--text-secondary); width:100%;">No data found. Is the Python server running?</p>';
+        }
     } catch (error) {
         loader.classList.add('hidden');
         console.error("Failed to fetch stock data", error);
-        grid.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Error loading data. Please try again.</p>';
+        grid.innerHTML = '<p style="text-align:center; color: var(--text-secondary); width:100%;">Error loading data. Is the Python backend running?</p>';
     }
+}
+
+function applySorting() {
+    const grid = document.getElementById('chart-grid');
+    
+    let sorted = [...currentStocksData];
+
+    sorted.sort((a, b) => {
+        if (currentSortMode === 'change_desc') {
+            return (b.dailyChangePct || 0) - (a.dailyChangePct || 0);
+        } else if (currentSortMode === 'change_asc') {
+            return (a.dailyChangePct || 0) - (b.dailyChangePct || 0);
+        } else if (currentSortMode === 'pe_asc') {
+            const peA = a.peRatio === 'N/A' ? Infinity : parseFloat(a.peRatio);
+            const peB = b.peRatio === 'N/A' ? Infinity : parseFloat(b.peRatio);
+            return peA - peB;
+        } else if (currentSortMode === 'pe_desc') {
+            const peA = a.peRatio === 'N/A' ? -Infinity : parseFloat(a.peRatio);
+            const peB = b.peRatio === 'N/A' ? -Infinity : parseFloat(b.peRatio);
+            return peB - peA;
+        }
+        return 0; // default
+    });
+
+    grid.innerHTML = '';
+    activeCharts.forEach(chart => chart.destroy());
+    activeCharts = [];
+
+    renderCards(sorted, grid);
 }
 
 function renderCards(stocksData, grid) {
@@ -101,8 +96,8 @@ function renderCards(stocksData, grid) {
         card.className = 'stock-card';
         card.style.setProperty('--accent-glow', `${stock.color}26`);
 
-        const currentPrice = stock.data[stock.data.length - 1];
-        const changePct = calculateChange(stock.data);
+        const currentPrice = stock.currentPrice || stock.data[stock.data.length - 1];
+        const changePct = stock.dailyChangePct || 0;
         const isPositive = changePct >= 0;
         const changeClass = isPositive ? 'positive' : 'negative';
         const changeIcon = isPositive ? '▲' : '▼';
@@ -147,7 +142,7 @@ function renderCards(stocksData, grid) {
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: stock.labels,
                 datasets: [{
                     label: stock.symbol,
                     data: stock.data,
@@ -200,10 +195,39 @@ function renderCards(stocksData, grid) {
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetch-btn').addEventListener('click', loadDashboard);
     
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentSortMode = this.dataset.sort;
+            applySorting();
+        });
+    });
+    
     document.getElementById('stock-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') loadDashboard();
     });
 
-    // Load defaults initially
-    loadDashboard();
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const content = evt.target.result;
+            // Parse by newlines, commas, or tabs, filter empty
+            const symbols = content.split(/[\n,\t]+/).map(s => s.trim()).filter(s => s.length > 0);
+            
+            if (symbols.length > 0) {
+                document.getElementById('stock-input').value = symbols.join(', ');
+                loadDashboard();
+            }
+        };
+        reader.readAsText(file);
+        
+        // Reset value so the same file can trigger change event again
+        e.target.value = '';
+    });
+
+    setTimeout(loadDashboard, 1500); 
 });
