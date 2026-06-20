@@ -83,7 +83,7 @@ header p {
 }
 
 .card-title {
-    font-size: 0.95rem;
+    font-size: 0.7rem;
     font-weight: 600;
     margin-bottom: 0.2rem;
 }
@@ -96,7 +96,7 @@ header p {
 }
 
 .card-price {
-    font-size: 1.15rem;
+    font-size: 0.85rem;
     font-weight: 600;
 }
 
