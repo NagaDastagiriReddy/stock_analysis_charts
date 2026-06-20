@@ -28,13 +28,44 @@
                     <button class="sort-btn" data-sort="pe_desc">P/E Ratio ↑</button>
                 </div>
             </div>
+            <div class="tabs-container">
+                <button class="tab-btn active" data-target="chart-grid">Charts View</button>
+                <button class="tab-btn" data-target="table-view">Table View</button>
+            </div>
         </header>
 
         <div id="loader" class="loader hidden"></div>
 
-        <main class="grid-container" id="chart-grid">
-            <!-- Stock Cards will be dynamically injected here by app.js -->
-        </main>
+        <div class="view-container">
+            <main class="grid-container" id="chart-grid">
+                <!-- Stock Cards will be dynamically injected here by app.js -->
+            </main>
+
+            <main id="table-view" class="hidden">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>CMP</th>
+                                <th>P/E Ratio</th>
+                                <th>Face Value</th>
+                                <th>ROI (ROA)</th>
+                                <th>ROCE</th>
+                                <th>ROE</th>
+                                <th>Div Yield</th>
+                                <th>Book Value</th>
+                                <th>52W High</th>
+                                <th>52W Low</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Rows injected by app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- Chart.js via CDN -->

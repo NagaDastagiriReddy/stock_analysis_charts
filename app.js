@@ -3,7 +3,8 @@ async function fetchStockDetails(symbol) {
     try {
         let querySymbol = symbol.trim().toUpperCase();
 
-        const url = `/api/stock?symbol=${querySymbol}`;
+        const baseUrl = window.location.protocol === 'file:' ? 'http://localhost:5000' : '';
+        const url = `${baseUrl}/api/stock?symbol=${querySymbol}`;
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -62,36 +63,37 @@ async function loadDashboard() {
 }
 
 function applySorting() {
+    if (currentSortMode === 'change_desc') {
+        currentStocksData.sort((a, b) => b.dailyChangePct - a.dailyChangePct);
+    } else if (currentSortMode === 'change_asc') {
+        currentStocksData.sort((a, b) => a.dailyChangePct - b.dailyChangePct);
+    } else if (currentSortMode === 'pe_asc') {
+        currentStocksData.sort((a, b) => {
+            const aPE = a.peRatio === 'N/A' ? Infinity : parseFloat(a.peRatio);
+            const bPE = b.peRatio === 'N/A' ? Infinity : parseFloat(b.peRatio);
+            return aPE - bPE;
+        });
+    } else if (currentSortMode === 'pe_desc') {
+        currentStocksData.sort((a, b) => {
+            const aPE = a.peRatio === 'N/A' ? -Infinity : parseFloat(a.peRatio);
+            const bPE = b.peRatio === 'N/A' ? -Infinity : parseFloat(b.peRatio);
+            return bPE - aPE;
+        });
+    } else {
+        // default: original fetch order
+        currentStocksData.sort((a, b) => a.originalIndex - b.originalIndex);
+    }
+    renderCards();
+    renderTable();
+}
+
+function renderCards() {
     const grid = document.getElementById('chart-grid');
-    
-    let sorted = [...currentStocksData];
-
-    sorted.sort((a, b) => {
-        if (currentSortMode === 'change_desc') {
-            return (b.dailyChangePct || 0) - (a.dailyChangePct || 0);
-        } else if (currentSortMode === 'change_asc') {
-            return (a.dailyChangePct || 0) - (b.dailyChangePct || 0);
-        } else if (currentSortMode === 'pe_asc') {
-            const peA = a.peRatio === 'N/A' ? Infinity : parseFloat(a.peRatio);
-            const peB = b.peRatio === 'N/A' ? Infinity : parseFloat(b.peRatio);
-            return peA - peB;
-        } else if (currentSortMode === 'pe_desc') {
-            const peA = a.peRatio === 'N/A' ? -Infinity : parseFloat(a.peRatio);
-            const peB = b.peRatio === 'N/A' ? -Infinity : parseFloat(b.peRatio);
-            return peB - peA;
-        }
-        return 0; // default
-    });
-
     grid.innerHTML = '';
     activeCharts.forEach(chart => chart.destroy());
     activeCharts = [];
 
-    renderCards(sorted, grid);
-}
-
-function renderCards(stocksData, grid) {
-    stocksData.forEach((stock, index) => {
+    currentStocksData.forEach((stock, index) => {
         const card = document.createElement('div');
         card.className = 'stock-card';
         card.style.setProperty('--accent-glow', `${stock.color}26`);
@@ -117,6 +119,10 @@ function renderCards(stocksData, grid) {
                 <div class="metric-item">
                     <span class="metric-label">P/E Ratio</span>
                     <span class="metric-value">${stock.peRatio}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">1Y Change</span>
+                    <span class="metric-value ${stock.yearlyChangePct >= 0 ? 'positive' : 'negative'}">${stock.yearlyChangePct >= 0 ? '+' : ''}${stock.yearlyChangePct}%</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">52W High</span>
@@ -192,6 +198,36 @@ function renderCards(stocksData, grid) {
     });
 }
 
+function renderTable() {
+    const tableBody = document.getElementById('table-body');
+    tableBody.innerHTML = '';
+
+    currentStocksData.forEach(stock => {
+        const tr = document.createElement('tr');
+        
+        const peRatio = stock.peRatio !== 'N/A' ? stock.peRatio : 'N/A';
+        const roi = stock.roi !== 'N/A' ? stock.roi + '%' : 'N/A';
+        const roe = stock.roe !== 'N/A' ? stock.roe + '%' : 'N/A';
+        const divYield = stock.dividendYield !== 'N/A' ? stock.dividendYield + '%' : 'N/A';
+        const bookValue = stock.bookValue !== 'N/A' ? '₹' + stock.bookValue : 'N/A';
+        
+        tr.innerHTML = `
+            <td style="color: ${stock.color}; font-weight: 600;">${stock.symbol}</td>
+            <td style="font-weight: 600;">₹${stock.currentPrice}</td>
+            <td>${peRatio}</td>
+            <td>${stock.faceValue}</td>
+            <td>${roi}</td>
+            <td>${stock.roce}</td>
+            <td>${roe}</td>
+            <td>${divYield}</td>
+            <td>${bookValue}</td>
+            <td>₹${stock.high52}</td>
+            <td>₹${stock.low52}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetch-btn').addEventListener('click', loadDashboard);
     
@@ -201,6 +237,18 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.add('active');
             currentSortMode = this.dataset.sort;
             applySorting();
+        });
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const targetId = this.dataset.target;
+            document.getElementById('chart-grid').classList.add('hidden');
+            document.getElementById('table-view').classList.add('hidden');
+            document.getElementById(targetId).classList.remove('hidden');
         });
     });
     
