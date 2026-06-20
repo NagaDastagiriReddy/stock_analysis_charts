@@ -3,7 +3,7 @@ async function fetchStockDetails(symbol) {
     try {
         let querySymbol = symbol.trim().toUpperCase();
 
-        const url = `http://localhost:5000/api/stock?symbol=${querySymbol}`;
+        const url = `/api/stock?symbol=${querySymbol}`;
         const response = await fetch(url);
         
         if (!response.ok) {

@@ -3,8 +3,13 @@ from flask_cors import CORS
 import yfinance as yf
 from datetime import datetime
 
-app = Flask(__name__)
+# Serve static files from the current directory
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 @app.route('/api/stock', methods=['GET'])
 def get_stock_data():
