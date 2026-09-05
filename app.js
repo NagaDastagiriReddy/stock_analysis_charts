@@ -292,11 +292,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentSortMode === 'pe_asc') {
                     currentSortMode = 'pe_desc';
                     this.dataset.sort = 'pe_desc';
-                    this.textContent = 'P/E Ratio ↑';
+                    this.textContent = 'P/E Ratio ↓';
                 } else {
                     currentSortMode = 'pe_asc';
                     this.dataset.sort = 'pe_asc';
-                    this.textContent = 'P/E Ratio ↓';
+                    this.textContent = 'P/E Ratio ↑';
                 }
             } else {
                 document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (isPEButton) {
                     currentSortMode = 'pe_asc';
                     this.dataset.sort = 'pe_asc';
-                    this.textContent = 'P/E Ratio ↓';
+                    this.textContent = 'P/E Ratio ↑';
                 } else {
                     currentSortMode = this.dataset.sort;
                 }
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const btnPE = document.getElementById('sort-pe-btn');
                     if (btnPE) {
                         btnPE.dataset.sort = 'pe_asc';
-                        btnPE.textContent = 'P/E Ratio ↓';
+                        btnPE.textContent = 'P/E Ratio ↑';
                     }
                 }
             }
