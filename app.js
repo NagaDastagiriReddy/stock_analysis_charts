@@ -45,7 +45,7 @@ async function loadDashboard() {
         
         const stocksData = results
             .filter(r => r.status === 'fulfilled' && !r.value.error)
-            .map(r => r.value);
+            .map((r, idx) => ({ ...r.value, originalIndex: idx }));
 
         // UI State: Render
         loader.classList.add('hidden');
@@ -63,10 +63,10 @@ async function loadDashboard() {
 }
 
 function applySorting() {
-    if (currentSortMode === 'change_desc') {
-        currentStocksData.sort((a, b) => b.dailyChangePct - a.dailyChangePct);
-    } else if (currentSortMode === 'change_asc') {
-        currentStocksData.sort((a, b) => a.dailyChangePct - b.dailyChangePct);
+    if (currentSortMode === 'change_1y_desc') {
+        currentStocksData.sort((a, b) => (b.yearlyChangePct || 0) - (a.yearlyChangePct || 0));
+    } else if (currentSortMode === 'change_1y_asc') {
+        currentStocksData.sort((a, b) => (a.yearlyChangePct || 0) - (b.yearlyChangePct || 0));
     } else if (currentSortMode === 'pe_asc') {
         currentStocksData.sort((a, b) => {
             const aPE = a.peRatio === 'N/A' ? Infinity : parseFloat(a.peRatio);
@@ -81,7 +81,7 @@ function applySorting() {
         });
     } else {
         // default: original fetch order
-        currentStocksData.sort((a, b) => a.originalIndex - b.originalIndex);
+        currentStocksData.sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
     }
     renderCards();
     renderTable();
@@ -154,7 +154,7 @@ function renderCards() {
                     data: stock.data,
                     borderColor: stock.color,
                     backgroundColor: gradient,
-                    borderWidth: 1.5,
+                    borderWidth: 1,
                     pointRadius: 0,
                     pointHoverRadius: 6,
                     pointBackgroundColor: '#fff',
@@ -184,7 +184,47 @@ function renderCards() {
                     }
                 },
                 scales: {
-                    x: { display: false },
+                    x: {
+                        display: true,
+                        border: { display: false },
+                        grid: {
+                            display: true,
+                            drawOnChartArea: true,
+                            color: function(context) {
+                                const idx = context.index;
+                                if (idx > 0 && stock.labels[idx] && stock.labels[idx - 1]) {
+                                    const y1 = stock.labels[idx - 1].match(/20\d{2}/)?.[0];
+                                    const y2 = stock.labels[idx].match(/20\d{2}/)?.[0];
+                                    if (y1 && y2 && y1 !== y2) {
+                                        return 'rgba(255, 255, 255, 0.22)';
+                                    }
+                                }
+                                return 'transparent';
+                            },
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 9, weight: '600', family: 'Inter' },
+                            maxRotation: 0,
+                            autoSkip: false,
+                            padding: 2,
+                            callback: function(val, idx) {
+                                if (idx === 0 && stock.labels[0]) {
+                                    const y = stock.labels[0].match(/20\d{2}/)?.[0];
+                                    return y ? `'${y.slice(2)}` : '';
+                                }
+                                if (idx > 0 && stock.labels[idx] && stock.labels[idx - 1]) {
+                                    const y1 = stock.labels[idx - 1].match(/20\d{2}/)?.[0];
+                                    const y2 = stock.labels[idx].match(/20\d{2}/)?.[0];
+                                    if (y1 && y2 && y1 !== y2) {
+                                        return `'${y2.slice(2)}`;
+                                    }
+                                }
+                                return '';
+                            }
+                        }
+                    },
                     y: {
                         display: false,
                         min: Math.min(...stock.data) * 0.98,
@@ -233,9 +273,63 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.querySelectorAll('.sort-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentSortMode = this.dataset.sort;
+            const is1YButton = this.id === 'sort-1y-btn';
+            const isPEButton = this.id === 'sort-pe-btn';
+
+            if (is1YButton && this.classList.contains('active')) {
+                // Toggle 1Y % Change direction
+                if (currentSortMode === 'change_1y_desc') {
+                    currentSortMode = 'change_1y_asc';
+                    this.dataset.sort = 'change_1y_asc';
+                    this.textContent = '% Change (1Y) ↑';
+                } else {
+                    currentSortMode = 'change_1y_desc';
+                    this.dataset.sort = 'change_1y_desc';
+                    this.textContent = '% Change (1Y) ↓';
+                }
+            } else if (isPEButton && this.classList.contains('active')) {
+                // Toggle P/E Ratio direction
+                if (currentSortMode === 'pe_asc') {
+                    currentSortMode = 'pe_desc';
+                    this.dataset.sort = 'pe_desc';
+                    this.textContent = 'P/E Ratio ↑';
+                } else {
+                    currentSortMode = 'pe_asc';
+                    this.dataset.sort = 'pe_asc';
+                    this.textContent = 'P/E Ratio ↓';
+                }
+            } else {
+                document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                if (is1YButton) {
+                    currentSortMode = 'change_1y_desc';
+                    this.dataset.sort = 'change_1y_desc';
+                    this.textContent = '% Change (1Y) ↓';
+                } else if (isPEButton) {
+                    currentSortMode = 'pe_asc';
+                    this.dataset.sort = 'pe_asc';
+                    this.textContent = 'P/E Ratio ↓';
+                } else {
+                    currentSortMode = this.dataset.sort;
+                }
+
+                // Reset inactive toggle button states
+                if (!is1YButton) {
+                    const btn1Y = document.getElementById('sort-1y-btn');
+                    if (btn1Y) {
+                        btn1Y.dataset.sort = 'change_1y_desc';
+                        btn1Y.textContent = '% Change (1Y) ↓';
+                    }
+                }
+                if (!isPEButton) {
+                    const btnPE = document.getElementById('sort-pe-btn');
+                    if (btnPE) {
+                        btnPE.dataset.sort = 'pe_asc';
+                        btnPE.textContent = 'P/E Ratio ↓';
+                    }
+                }
+            }
             applySorting();
         });
     });

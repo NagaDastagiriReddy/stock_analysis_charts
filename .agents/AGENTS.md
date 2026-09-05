@@ -25,3 +25,10 @@ Build a UI dashboard to display simple line charts of multiple Indian stocks, wi
   - Yahoo Finance NSE data carries an accepted ~15-minute delay during live market hours.
   - Historical data must be fetched for a 5-year period with `auto_adjust=False` so that the charts reflect raw closing prices rather than dividend/split-adjusted prices. The UI must also calculate and display the 1-year % price change.
   - The Current Market Price (CMP) displayed on the UI must be pulled from the live `.info` spot price, rather than inferred from the final node of the historical chart array.
+  - **Sorting Behavior:** Both the 1-Year % Change (`yearlyChangePct`) and P/E Ratio sort controls use single toggle buttons (`#sort-1y-btn` and `#sort-pe-btn`) that alternate between Descending (↓) and Ascending (↑) order on consecutive clicks.
+  - **Chart Year Separators:** Sparkline line charts must render vertical year boundary lines and X-axis year labels (e.g., `'21`, `'22`, `'23`, `'24`, `'25`, `'26'`) to clearly delineate year transitions across the 5-year historical timeline.
+  - **Chart Line Stroke:** Chart line width is set to a refined 1.0px stroke (`borderWidth: 1`) to enhance the visibility of micro price fluctuations across dense 5-year historical datasets.
+
+
+
+
